@@ -30,7 +30,7 @@ function cleanTranscriptJson(json) {
 }
 
 async function fetchPlayerResponse(videoId) {
-  const res = await fetch(`https://www.youtube.com/watch?v=${videoId}`);
+  const res = await fetch(`https://www.youtube.com/watch?v=${videoId}`, { credentials: 'include' });
   if (!res.ok) { console.log('[yt-transcript] watch page fetch failed:', res.status); return null; }
   const html = await res.text();
 
@@ -86,7 +86,7 @@ async function downloadTranscript(videoId, title) {
       return;
     }
 
-    const xmlRes = await fetch(captionUrl + '&fmt=json3');
+    const xmlRes = await fetch(captionUrl + '&fmt=json3', { credentials: 'include' });
     console.log('[yt-transcript] timedtext fetch status:', xmlRes.status);
     if (!xmlRes.ok) {
       showToast('No transcript available');
