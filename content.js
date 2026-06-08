@@ -151,7 +151,12 @@ function injectMenuButton(card) {
   }, { once: true });
 }
 
+let _observerActive = false;
+
 function observeSearchResults() {
+  if (_observerActive) return;
+  _observerActive = true;
+
   const observer = new MutationObserver((mutations) => {
     for (const mutation of mutations) {
       for (const node of mutation.addedNodes) {
