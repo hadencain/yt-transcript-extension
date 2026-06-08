@@ -44,16 +44,16 @@ function cleanTranscriptXml(xmlString) {
 
 async function fetchPlayerResponse(videoId) {
   const res = await fetch(`https://www.youtube.com/watch?v=${videoId}`);
-  if (!res.ok) return null;
+  if (!res.ok) { console.log('[yt-transcript] watch page fetch failed:', res.status); return null; }
   const html = await res.text();
 
   const keyIdx = html.indexOf('ytInitialPlayerResponse');
+  console.log('[yt-transcript] ytInitialPlayerResponse in page:', keyIdx !== -1);
   if (keyIdx === -1) return null;
 
   const jsonStart = html.indexOf('{', keyIdx);
   if (jsonStart === -1) return null;
 
-  // bracket-count to find the matching closing brace
   let depth = 0;
   let i = jsonStart;
   for (; i < html.length; i++) {
@@ -62,8 +62,11 @@ async function fetchPlayerResponse(videoId) {
   }
 
   try {
-    return JSON.parse(html.slice(jsonStart, i + 1));
-  } catch {
+    const parsed = JSON.parse(html.slice(jsonStart, i + 1));
+    console.log('[yt-transcript] parsed ok, captions:', !!parsed?.captions);
+    return parsed;
+  } catch (e) {
+    console.log('[yt-transcript] JSON.parse failed:', e.message);
     return null;
   }
 }
@@ -144,13 +147,17 @@ function injectMenuButton(card) {
       const title = getTitleFromCard(card);
       if (!videoId) return;
 
-      const existingItem = popup.querySelector('ytd-menu-service-item-renderer');
+      const existingItem = popup.querySelector('tp-yt-paper-item');
       if (!existingItem) return;
 
-      const item = existingItem.cloneNode(true);
+      const item = document.createElement('tp-yt-paper-item');
       item.id = 'yt-transcript-btn';
-      const label = item.querySelector('yt-formatted-string');
-      if (label) label.textContent = 'Download Transcript';
+      item.style.cssText = existingItem.style.cssText;
+      item.className = existingItem.className;
+      const span = document.createElement('span');
+      span.textContent = 'Download Transcript';
+      span.style.cssText = 'flex:1; font-size:14px; padding: 0 16px;';
+      item.appendChild(span);
 
       item.addEventListener('click', (e) => {
         e.stopPropagation();
