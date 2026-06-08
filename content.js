@@ -93,7 +93,10 @@ async function downloadTranscript(videoId, title) {
       return;
     }
 
-    const json = await xmlRes.json();
+    const rawText = await xmlRes.text();
+    console.log('[yt-transcript] raw response length:', rawText.length, '| preview:', rawText.slice(0, 150));
+    if (!rawText) { showToast('No transcript available'); return; }
+    const json = JSON.parse(rawText);
     console.log('[yt-transcript] events:', json.events?.length);
     const cleanText = cleanTranscriptJson(json);
 
