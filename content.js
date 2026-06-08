@@ -71,33 +71,37 @@ function extractCaptionUrl(playerResponse) {
 }
 
 async function downloadTranscript(videoId, title) {
-  const playerResponse = await fetchPlayerResponse(videoId);
-  if (!playerResponse) {
+  try {
+    const playerResponse = await fetchPlayerResponse(videoId);
+    if (!playerResponse) {
+      showToast('No transcript available');
+      return;
+    }
+
+    const captionUrl = extractCaptionUrl(playerResponse);
+    if (!captionUrl) {
+      showToast('No transcript available');
+      return;
+    }
+
+    const xmlRes = await fetch(captionUrl);
+    if (!xmlRes.ok) {
+      showToast('No transcript available');
+      return;
+    }
+
+    const xmlText = await xmlRes.text();
+    const cleanText = cleanTranscriptXml(xmlText);
+
+    const filename = title
+      ? `${sanitizeFilename(title)}.txt`
+      : `transcript-${videoId}.txt`;
+
+    const dataUrl = 'data:text/plain;charset=utf-8,' + encodeURIComponent(cleanText);
+    chrome.downloads.download({ url: dataUrl, filename });
+  } catch {
     showToast('No transcript available');
-    return;
   }
-
-  const captionUrl = extractCaptionUrl(playerResponse);
-  if (!captionUrl) {
-    showToast('No transcript available');
-    return;
-  }
-
-  const xmlRes = await fetch(captionUrl);
-  if (!xmlRes.ok) {
-    showToast('No transcript available');
-    return;
-  }
-
-  const xmlText = await xmlRes.text();
-  const cleanText = cleanTranscriptXml(xmlText);
-
-  const filename = title
-    ? `${sanitizeFilename(title)}.txt`
-    : `transcript-${videoId}.txt`;
-
-  const dataUrl = 'data:text/plain;charset=utf-8,' + encodeURIComponent(cleanText);
-  chrome.downloads.download({ url: dataUrl, filename });
 }
 
 function getVideoIdFromCard(card) {
