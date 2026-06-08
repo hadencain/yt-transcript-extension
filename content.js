@@ -93,18 +93,21 @@ async function downloadTranscript(videoId, title) {
     }
 
     const captionUrl = extractCaptionUrl(playerResponse);
+    console.log('[yt-transcript] captionUrl:', captionUrl);
     if (!captionUrl) {
       showToast('No transcript available');
       return;
     }
 
     const xmlRes = await fetch(captionUrl);
+    console.log('[yt-transcript] timedtext fetch status:', xmlRes.status);
     if (!xmlRes.ok) {
       showToast('No transcript available');
       return;
     }
 
     const xmlText = await xmlRes.text();
+    console.log('[yt-transcript] xmlText length:', xmlText.length, xmlText.slice(0, 100));
     const cleanText = cleanTranscriptXml(xmlText);
 
     const filename = title
