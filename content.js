@@ -47,11 +47,22 @@ async function fetchPlayerResponse(videoId) {
   if (!res.ok) return null;
   const html = await res.text();
 
-  const match = html.match(/ytInitialPlayerResponse\s*=\s*(\{.+?\});(?:var\s|const\s|let\s|<\/script>)/s);
-  if (!match) return null;
+  const keyIdx = html.indexOf('ytInitialPlayerResponse');
+  if (keyIdx === -1) return null;
+
+  const jsonStart = html.indexOf('{', keyIdx);
+  if (jsonStart === -1) return null;
+
+  // bracket-count to find the matching closing brace
+  let depth = 0;
+  let i = jsonStart;
+  for (; i < html.length; i++) {
+    if (html[i] === '{') depth++;
+    else if (html[i] === '}' && --depth === 0) break;
+  }
 
   try {
-    return JSON.parse(match[1]);
+    return JSON.parse(html.slice(jsonStart, i + 1));
   } catch {
     return null;
   }
