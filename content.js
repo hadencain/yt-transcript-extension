@@ -99,3 +99,73 @@ async function downloadTranscript(videoId, title) {
   const dataUrl = 'data:text/plain;charset=utf-8,' + encodeURIComponent(cleanText);
   chrome.downloads.download({ url: dataUrl, filename });
 }
+
+function getVideoIdFromCard(card) {
+  const anchor = card.querySelector('a#thumbnail');
+  if (!anchor) return null;
+  const url = new URL(anchor.href, 'https://www.youtube.com');
+  return url.searchParams.get('v');
+}
+
+function getTitleFromCard(card) {
+  const titleEl = card.querySelector('#video-title');
+  return titleEl ? titleEl.textContent.trim() : null;
+}
+
+function injectMenuButton(card) {
+  const threeDotsBtn = card.querySelector('#menu yt-icon-button');
+  if (!threeDotsBtn || threeDotsBtn.dataset.ytTranscriptWired) return;
+  threeDotsBtn.dataset.ytTranscriptWired = '1';
+
+  threeDotsBtn.addEventListener('click', () => {
+    const popupObserver = new MutationObserver(() => {
+      const popup = document.querySelector('ytd-menu-popup-renderer tp-yt-paper-listbox');
+      if (!popup) return;
+      popupObserver.disconnect();
+
+      if (popup.querySelector('#yt-transcript-btn')) return;
+
+      const videoId = getVideoIdFromCard(card);
+      const title = getTitleFromCard(card);
+      if (!videoId) return;
+
+      const existingItem = popup.querySelector('ytd-menu-service-item-renderer');
+      if (!existingItem) return;
+
+      const item = existingItem.cloneNode(true);
+      item.id = 'yt-transcript-btn';
+      const label = item.querySelector('yt-formatted-string');
+      if (label) label.textContent = 'Download Transcript';
+
+      item.addEventListener('click', (e) => {
+        e.stopPropagation();
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        downloadTranscript(videoId, title);
+      });
+
+      popup.appendChild(item);
+    });
+
+    popupObserver.observe(document.body, { childList: true, subtree: true });
+    setTimeout(() => popupObserver.disconnect(), 2000);
+  }, { once: true });
+}
+
+function observeSearchResults() {
+  const observer = new MutationObserver((mutations) => {
+    for (const mutation of mutations) {
+      for (const node of mutation.addedNodes) {
+        if (node.nodeType !== Node.ELEMENT_NODE) continue;
+        if (node.tagName === 'YTD-VIDEO-RENDERER') {
+          injectMenuButton(node);
+        }
+        node.querySelectorAll?.('ytd-video-renderer').forEach(injectMenuButton);
+      }
+    }
+  });
+
+  observer.observe(document.body, { childList: true, subtree: true });
+  document.querySelectorAll('ytd-video-renderer').forEach(injectMenuButton);
+}
+
+observeSearchResults();
