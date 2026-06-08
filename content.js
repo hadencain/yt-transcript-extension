@@ -155,35 +155,12 @@ function injectMenuButton(card) {
   }, { once: true });
 }
 
-let _observerActive = false;
-
 function scanCards() {
   if (window.location.pathname.startsWith('/results')) {
     document.querySelectorAll('ytd-video-renderer').forEach(injectMenuButton);
   }
 }
 
-function observeSearchResults() {
-  if (_observerActive) return;
-  _observerActive = true;
-
-  const observer = new MutationObserver((mutations) => {
-    for (const mutation of mutations) {
-      for (const node of mutation.addedNodes) {
-        if (node.nodeType !== Node.ELEMENT_NODE) continue;
-        if (node.tagName === 'YTD-VIDEO-RENDERER') {
-          injectMenuButton(node);
-        }
-        node.querySelectorAll?.('ytd-video-renderer').forEach(injectMenuButton);
-      }
-    }
-  });
-
-  observer.observe(document.body, { childList: true, subtree: true });
-  scanCards();
-
-  // Re-scan on YouTube SPA navigation
-  window.addEventListener('yt-navigate-finish', scanCards);
-}
-
-observeSearchResults();
+// Poll every 500ms — handles YouTube's unpredictable SPA rendering pipeline.
+// injectMenuButton is idempotent (dataset guard), so repeated calls are safe.
+setInterval(scanCards, 500);
