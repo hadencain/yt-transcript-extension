@@ -7,7 +7,7 @@
   "host_permissions": ["https://www.youtube.com/*"],
   "content_scripts": [
     {
-      "matches": ["https://www.youtube.com/results*"],
+      "matches": ["https://www.youtube.com/*"],
       "js": ["content.js"],
       "css": ["toast.css"],
       "run_at": "document_idle"

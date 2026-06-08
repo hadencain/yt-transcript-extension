@@ -157,6 +157,12 @@ function injectMenuButton(card) {
 
 let _observerActive = false;
 
+function scanCards() {
+  if (window.location.pathname.startsWith('/results')) {
+    document.querySelectorAll('ytd-video-renderer').forEach(injectMenuButton);
+  }
+}
+
 function observeSearchResults() {
   if (_observerActive) return;
   _observerActive = true;
@@ -174,7 +180,10 @@ function observeSearchResults() {
   });
 
   observer.observe(document.body, { childList: true, subtree: true });
-  document.querySelectorAll('ytd-video-renderer').forEach(injectMenuButton);
+  scanCards();
+
+  // Re-scan on YouTube SPA navigation
+  window.addEventListener('yt-navigate-finish', scanCards);
 }
 
 observeSearchResults();
