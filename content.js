@@ -20,26 +20,13 @@ function sanitizeFilename(title) {
     .slice(0, 200);                 // cap length
 }
 
-function cleanTranscriptXml(xmlString) {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(xmlString, 'text/xml');
-  const textNodes = Array.from(doc.querySelectorAll('text'));
-
-  const lines = textNodes.map(node => {
-    let text = node.textContent;
-    // decode common HTML entities not handled by textContent
-    text = text
-      .replace(/&amp;/g, '&')
-      .replace(/&#39;/g, "'")
-      .replace(/&quot;/g, '"')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>');
-    // strip any inline tags (e.g. <font color="...">)
-    text = text.replace(/<[^>]+>/g, '');
-    return text.trim();
-  });
-
-  return lines.filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
+function cleanTranscriptJson(json) {
+  const events = json.events || [];
+  const lines = events
+    .filter(e => e.segs)
+    .map(e => e.segs.map(s => s.utf8 || '').join('').replace(/\n/g, ' ').trim())
+    .filter(Boolean);
+  return lines.join(' ').replace(/\s+/g, ' ').trim();
 }
 
 async function fetchPlayerResponse(videoId) {
@@ -99,16 +86,16 @@ async function downloadTranscript(videoId, title) {
       return;
     }
 
-    const xmlRes = await fetch(captionUrl);
+    const xmlRes = await fetch(captionUrl + '&fmt=json3');
     console.log('[yt-transcript] timedtext fetch status:', xmlRes.status);
     if (!xmlRes.ok) {
       showToast('No transcript available');
       return;
     }
 
-    const xmlText = await xmlRes.text();
-    console.log('[yt-transcript] xmlText length:', xmlText.length, xmlText.slice(0, 100));
-    const cleanText = cleanTranscriptXml(xmlText);
+    const json = await xmlRes.json();
+    console.log('[yt-transcript] events:', json.events?.length);
+    const cleanText = cleanTranscriptJson(json);
 
     const filename = title
       ? `${sanitizeFilename(title)}.txt`
