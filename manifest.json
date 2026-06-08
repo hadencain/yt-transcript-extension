@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "YT Transcript Downloader",
+  "version": "1.0.0",
+  "description": "Download transcripts from YouTube search results",
+  "permissions": ["downloads"],
+  "host_permissions": ["https://www.youtube.com/*"],
+  "content_scripts": [
+    {
+      "matches": ["https://www.youtube.com/results*"],
+      "js": ["content.js"],
+      "css": ["toast.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}
