@@ -1,1 +1,21 @@
-/* toast styles — added in Task 2 */
+#yt-transcript-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: #212121;
+  color: #fff;
+  font-family: 'Roboto', sans-serif;
+  font-size: 14px;
+  padding: 12px 20px;
+  border-radius: 4px;
+  z-index: 99999;
+  opacity: 1;
+  animation: yt-toast-fade 3s forwards;
+  pointer-events: none;
+}
+
+@keyframes yt-toast-fade {
+  0%   { opacity: 1; }
+  70%  { opacity: 1; }
+  100% { opacity: 0; }
+}
